@@ -6,6 +6,7 @@
 #include<vector>
 #include<memory>
 #include<mutex>
+#include<thread>
 
 
 template<typename T> class StateMachineBuilder;// fwd declaration
@@ -32,6 +33,17 @@ class StateMachine
          */
         int sendEvent(int event) {
             return processEvent(event);
+        }
+        
+        void sendEventAsyncUnblocked(int event) {
+            processEventAsync(event);
+        }
+        
+        void sendEventAsyncBlocked(int event) {
+            std::lock_guard<std::mutex> guard(mutexAsync);
+            if( mAsyncThread != nullptr )
+                mAsyncThread->join();
+            mAsyncThread = new std::thread(&StateMachine<T>::processEvent,this,event);
         }
     private:
         /**
@@ -124,11 +136,14 @@ class StateMachine
          * Avaoid simultanious send events
          */
         std::mutex mutex;
+        std::mutex mutexAsync;
 
         /**
          * Multimap to store the transitions
          */
         std::multimap<int, Transition> stateMachine;
+
+        std::thread *mAsyncThread = nullptr;
 
         /**
          * Constructor to init state machine
@@ -167,6 +182,39 @@ class StateMachine
                 }
             }
             return retVal;
+        }
+
+        int processEventUnlocked(int event)
+        {
+            int retVal = -1;
+
+            for( auto itr = stateMachine.find(currentState); itr != stateMachine.end() ; itr++ )
+            {
+                if(itr->second == event )
+                {
+                    Handler handle = itr->second.getHandler();
+                    retVal = (handlerClass->*handle)();
+                    currentState = itr->second.getNextState();
+                    break;
+                }
+            }
+            return retVal;
+        }
+        
+        void processEventAsync(int event)
+        {
+            std::lock_guard<std::mutex> guard(mutex);
+
+            for( auto itr = stateMachine.find(currentState); itr != stateMachine.end() ; itr++ )
+            {
+                if(itr->second == event )
+                {
+                    Handler handle = itr->second.getHandler();
+                    std::thread* fireThread = new std::thread(handle, handlerClass);
+                    currentState = itr->second.getNextState();
+                    break;
+                }
+            }
         }
 
         /*
