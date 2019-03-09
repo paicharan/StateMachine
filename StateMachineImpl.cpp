@@ -3,6 +3,7 @@
 
 class StateMachineImpl 
 {
+    std::mutex mutex;
     public:
         enum States{
             E_STATE_1 = 0,
@@ -21,16 +22,19 @@ class StateMachineImpl
 
         int handleEvent1()
         {
+            std::lock_guard<std::mutex> guard(mutex);
             std::cout<<__FUNCTION__<<std::endl;
             return 0;
         }
         int handleEvent2()
         {
+            std::lock_guard<std::mutex> guard(mutex);
             std::cout<<__FUNCTION__<<std::endl;
             return 0;
         }
         int handleEvent3()
         {
+            std::lock_guard<std::mutex> guard(mutex);
             std::cout<<__FUNCTION__<<std::endl;
             return 0;
         }

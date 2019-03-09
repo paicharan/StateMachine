@@ -170,6 +170,7 @@ class StateMachine
         {
             std::lock_guard<std::mutex> guard(mutex);
             int retVal = -1;
+            bool isHandled = false;
 
             for( auto itr = stateMachine.find(currentState); itr != stateMachine.end() ; itr++ )
             {
@@ -178,32 +179,19 @@ class StateMachine
                     Handler handle = itr->second.getHandler();
                     retVal = (handlerClass->*handle)();
                     currentState = itr->second.getNextState();
+                    isHandled = true;
                     break;
                 }
             }
+            if( !isHandled )
+                std::cout<<"Event dropped Event: "<< event << " Current state : "<<currentState << std::endl;
             return retVal;
         }
 
-        int processEventUnlocked(int event)
-        {
-            int retVal = -1;
-
-            for( auto itr = stateMachine.find(currentState); itr != stateMachine.end() ; itr++ )
-            {
-                if(itr->second == event )
-                {
-                    Handler handle = itr->second.getHandler();
-                    retVal = (handlerClass->*handle)();
-                    currentState = itr->second.getNextState();
-                    break;
-                }
-            }
-            return retVal;
-        }
-        
         void processEventAsync(int event)
         {
             std::lock_guard<std::mutex> guard(mutex);
+            bool isHandled = false;
 
             for( auto itr = stateMachine.find(currentState); itr != stateMachine.end() ; itr++ )
             {
@@ -212,9 +200,12 @@ class StateMachine
                     Handler handle = itr->second.getHandler();
                     std::thread* fireThread = new std::thread(handle, handlerClass);
                     currentState = itr->second.getNextState();
+                    isHandled = true;
                     break;
                 }
             }
+            if( !isHandled )
+                std::cout<<"Event dropped Event: "<< event << " Current state : "<<currentState << std::endl;
         }
 
         /*
