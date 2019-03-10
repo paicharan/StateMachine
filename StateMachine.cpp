@@ -7,6 +7,7 @@
 #include<memory>
 #include<mutex>
 #include<thread>
+#include<ThreadPool.cpp>
 
 
 template<typename T> class StateMachineBuilder;// fwd declaration
@@ -137,7 +138,7 @@ class StateMachine
          */
         std::mutex mutex;
         std::mutex mutexAsync;
-
+        ThreadPool<T>* mThreadPool;
         /**
          * Multimap to store the transitions
          */
@@ -154,6 +155,7 @@ class StateMachine
         {
             currentState = initialState;
             handlerClass = clazz;
+            mThreadPool = new ThreadPool<T>(std::thread::hardware_concurrency());
         }
 
         StateMachine() = delete;
@@ -198,7 +200,9 @@ class StateMachine
                 if(itr->second == event )
                 {
                     Handler handle = itr->second.getHandler();
-                    std::thread* fireThread = new std::thread(handle, handlerClass);
+                    Job<T> job(handlerClass, handle);
+                    mThreadPool->addToPool(job);
+                    //std::thread* fireThread = new std::thread(handle, handlerClass);
                     currentState = itr->second.getNextState();
                     isHandled = true;
                     break;
