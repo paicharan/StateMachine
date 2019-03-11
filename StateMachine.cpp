@@ -35,11 +35,11 @@ class StateMachine
         int sendEvent(int event) {
             return processEvent(event);
         }
-        
+
         void sendEventAsyncUnblocked(int event) {
             processEventAsync(event);
         }
-        
+
         void sendEventAsyncBlocked(int event) {
             std::lock_guard<std::mutex> guard(mutexAsync);
             if( mAsyncThread != nullptr )
@@ -51,7 +51,7 @@ class StateMachine
          * A Handler function should return a int and accepts nothing.
          */
         typedef int (T::*Handler)(void);
-       
+
         /**
          * State class represents a state.
          * This will have info of eligible events to be handled
@@ -122,7 +122,7 @@ class StateMachine
                     return finalState;
                 }
         };
-       
+
         /*
          * Current state of state machine
          */
@@ -165,8 +165,6 @@ class StateMachine
          * Event processor, finds the coresponding Transtition structur
          * and the calles handler function and moves the currentState to 
          * the next state based on the event.
-         *
-         * TODO:: add process event async
          */
         int processEvent(int event)
         {
@@ -202,7 +200,6 @@ class StateMachine
                     Handler handle = itr->second.getHandler();
                     Job<T> job(handlerClass, handle);
                     mThreadPool->addToPool(job);
-                    //std::thread* fireThread = new std::thread(handle, handlerClass);
                     currentState = itr->second.getNextState();
                     isHandled = true;
                     break;

@@ -10,28 +10,29 @@
 template <typename T>
 class Job {
     public:
-    typedef int (T::*JobFunction)(void);
-    Job(T* clazz, JobFunction job): mJobHandlerClass(clazz), mJob(job)
-    {
-    }
-    Job(const Job& other)
-    {
-        this->mJobHandlerClass = other.mJobHandlerClass;
-        this->mJob = other.mJob;
-    }
-    Job& operator=(const Job& other)
-    {
-        this->mJobHandlerClass = other.mJobHandlerClass;
-        this->mJob = other.mJob;
-    }
+        typedef int (T::*JobFunction)(void);
+        Job(T* clazz, JobFunction job)
+            : mJobHandlerClass(clazz), mJob(job)
+        {
+        }
+        Job(const Job& other)
+        {
+            this->mJobHandlerClass = other.mJobHandlerClass;
+            this->mJob = other.mJob;
+        }
+        Job& operator=(const Job& other)
+        {
+            this->mJobHandlerClass = other.mJobHandlerClass;
+            this->mJob = other.mJob;
+        }
 
-    void run()
-    {
-        (mJobHandlerClass->*mJob)();
-    }
+        void run()
+        {
+            (mJobHandlerClass->*mJob)();
+        }
     private:
-    T* mJobHandlerClass;
-    JobFunction mJob;
+        T* mJobHandlerClass;
+        JobFunction mJob;
 };
 
 template <typename T>
@@ -54,37 +55,41 @@ class ThreadPool
             Job<T> job = mJobQueue.front();
             mJobQueue.pop();
             job.run();
+            if( !mJobQueue.empty())
+            {
+                mCondition.notify_one();
+            }
         }
     }
     public :
-        ThreadPool(int size) : mSize(size)
+    explicit ThreadPool(int size) : mSize(size)
+    {
+        mCanceled = false;
+        mThreadPool.resize(size);
+        for(auto itr = mThreadPool.begin(); itr != mThreadPool.end(); itr++)
         {
-            mCanceled = false;
-            mThreadPool.resize(size);
-            for(auto itr = mThreadPool.begin(); itr != mThreadPool.end(); itr++)
-            {
-                *itr = new std::thread(&ThreadPool::ThreadFunction, this);
-            }
+            *itr = new std::thread(&ThreadPool::ThreadFunction, this);
         }
+    }
 
-        ThreadPool(const ThreadPool& other) = delete;
-        ThreadPool& operator=(const ThreadPool& rhs) = delete;
+    ThreadPool(const ThreadPool& other) = delete;
+    ThreadPool& operator=(const ThreadPool& rhs) = delete;
 
-        ~ThreadPool()
+    ~ThreadPool()
+    {
+        mCanceled = true;
+        mCondition.notify_all();
+        for(auto itr = mThreadPool.begin(); itr != mThreadPool.end(); itr++)
         {
-            mCanceled = true;
-            mCondition.notify_all();
-            for(auto itr = mThreadPool.begin(); itr != mThreadPool.end(); itr++)
-            {
-                *itr->join();
-            }
+            *itr->join();
         }
+    }
 
-        void addToPool(Job<T>& job)
-        {
-            mJobQueue.push(job);
-            mCondition.notify_one();
-        }
+    void addToPool(Job<T>& job)
+    {
+        mJobQueue.push(job);
+        mCondition.notify_one();
+    }
 
 };
 
