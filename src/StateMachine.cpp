@@ -158,6 +158,11 @@ class StateMachine
             mThreadPool = new ThreadPool<T>(std::thread::hardware_concurrency());
         }
 
+        ~StateMachine()
+        {
+            delete mThreadPool;
+        }
+
         StateMachine() = delete;
         StateMachine operator=(const StateMachine& rhs) = delete;
         StateMachine(const StateMachine& other) = delete;
