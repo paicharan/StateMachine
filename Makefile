@@ -7,15 +7,11 @@ TESTDIR=test
 ODIR=obj
 
 
-_OBJ = StateMachine.o ThreadPool.o main.o StateMachineImpl.o 
+_OBJ = main.o StateMachineImpl.o 
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 stateMachine : $(OBJ)
 	$(CPP) -o $@ $^ $(CFLAGS)
-
-$(ODIR)/%.o: $(SRC)/%.cpp 
-	@mkdir -p $(ODIR)
-	$(CPP) -c -o $@ $^ $(CFLAGS)
 
 $(ODIR)/%.o: $(TESTDIR)/%.cpp 
 	@mkdir -p $(ODIR)
@@ -24,7 +20,6 @@ $(ODIR)/%.o: $(TESTDIR)/%.cpp
 .PHONY: clean
 
 clean:
-	rm -f $(ODIR)/*.o
-	rmdir $(ODIR)
-	rm stateMachine
+	rm -rf $(ODIR)
+	rm -f stateMachine
 

@@ -7,7 +7,7 @@
 #include<memory>
 #include<mutex>
 #include<thread>
-#include<ThreadPool.cpp>
+#include<ThreadPool.hpp>
 
 
 template<typename T> class StateMachineBuilder;// fwd declaration

@@ -1,4 +1,4 @@
-#include<StateMachine.cpp>
+#include<StateMachine.hpp>
 #include<chrono>
 
 class StateMachineImpl 
